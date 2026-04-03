@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { Bell, RefreshCw } from 'lucide-react'
 import AlertBadge from '@/components/AlertBadge'
+import { getMockAlertas } from '@/lib/mock-data'
 
 type Alerta = {
   tipo: string
@@ -24,9 +25,13 @@ export default function AlertasPage() {
     try {
       const res = await fetch('/api/alertas')
       const data = await res.json()
-      setAlertas(Array.isArray(data) ? data : [])
-    } catch (e) {
-      console.error(e)
+      if (Array.isArray(data) && data.length > 0) {
+        setAlertas(data)
+      } else {
+        setAlertas(getMockAlertas())
+      }
+    } catch {
+      setAlertas(getMockAlertas())
     }
     setLoading(false)
   }

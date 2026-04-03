@@ -4,9 +4,11 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { FileText, Plus, Download, Eye, Loader2 } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, subMonths } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Link from 'next/link'
+import InformePreview from '@/components/InformePreview'
+import { generarInformeMockCliente } from '@/lib/mock-informe'
 
 type Informe = {
   id: string
@@ -21,6 +23,8 @@ export default function InformesPage() {
   const [informes, setInformes] = useState<Informe[]>([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
+  const [demoMode, setDemoMode] = useState(false)
+  const [previewNarrativa, setPreviewNarrativa] = useState<string | null>(null)
 
   useEffect(() => { loadInformes() }, [])
 
@@ -29,27 +33,47 @@ export default function InformesPage() {
     try {
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('informes')
         .select('*')
         .order('created_at', { ascending: false })
-      setInformes(data || [])
-    } catch (e) {
-      console.error(e)
+      if (error) throw error
+      if (data && data.length > 0) {
+        setInformes(data)
+        setDemoMode(false)
+      } else {
+        loadDemoInformes()
+      }
+    } catch {
+      loadDemoInformes()
     }
     setLoading(false)
   }
 
+  const loadDemoInformes = () => {
+    const now = new Date()
+    setInformes([
+      { id: 'demo-1', periodo_inicio: format(subMonths(now, 1), 'yyyy-MM-01'), periodo_fin: format(subMonths(now, 1), 'yyyy-MM-28'), tipo: 'mensual', narrativa_ia: generarInformeMockCliente(format(subMonths(now, 1), 'MMMM yyyy', { locale: es })), created_at: format(subMonths(now, 0), 'yyyy-MM-01') },
+      { id: 'demo-2', periodo_inicio: format(subMonths(now, 2), 'yyyy-MM-01'), periodo_fin: format(subMonths(now, 2), 'yyyy-MM-28'), tipo: 'mensual', narrativa_ia: generarInformeMockCliente(format(subMonths(now, 2), 'MMMM yyyy', { locale: es })), created_at: format(subMonths(now, 1), 'yyyy-MM-01') },
+      { id: 'demo-3', periodo_inicio: format(subMonths(now, 3), 'yyyy-MM-01'), periodo_fin: format(subMonths(now, 3), 'yyyy-MM-28'), tipo: 'mensual', narrativa_ia: generarInformeMockCliente(format(subMonths(now, 3), 'MMMM yyyy', { locale: es })), created_at: format(subMonths(now, 2), 'yyyy-MM-01') },
+    ])
+    setDemoMode(true)
+  }
+
   const handleGenerar = async () => {
     setGenerating(true)
-    try {
-      const res = await fetch('/api/informe/generate', { method: 'POST' })
-      const data = await res.json()
-      if (data.ok) {
-        await loadInformes()
+    if (demoMode) {
+      await new Promise(r => setTimeout(r, 1500))
+      const narrativa = generarInformeMockCliente(format(new Date(), 'MMMM yyyy', { locale: es }))
+      setPreviewNarrativa(narrativa)
+    } else {
+      try {
+        const res = await fetch('/api/informe/generate', { method: 'POST' })
+        const data = await res.json()
+        if (data.ok) await loadInformes()
+      } catch (e) {
+        console.error(e)
       }
-    } catch (e) {
-      console.error(e)
     }
     setGenerating(false)
   }
@@ -103,23 +127,38 @@ export default function InformesPage() {
                 {informe.narrativa_ia?.slice(0, 150)}...
               </p>
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-                <Link
-                  href={`/informes/${informe.id}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  Ver
-                </Link>
-                <Link
-                  href={`/informes/${informe.id}?pdf=1`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  PDF
-                </Link>
+                {demoMode ? (
+                  <button
+                    onClick={() => setPreviewNarrativa(informe.narrativa_ia)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Ver
+                  </button>
+                ) : (
+                  <>
+                    <Link href={`/informes/${informe.id}`} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                      <Eye className="w-3.5 h-3.5" /> Ver
+                    </Link>
+                    <Link href={`/informes/${informe.id}?pdf=1`} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition">
+                      <Download className="w-3.5 h-3.5" /> PDF
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {previewNarrativa && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-8" onClick={() => setPreviewNarrativa(null)}>
+          <div className="max-w-3xl w-full max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <InformePreview narrativa={previewNarrativa} municipio="Llanes" periodo="Informe generado" />
+            <button onClick={() => setPreviewNarrativa(null)} className="mt-4 w-full py-3 bg-white/80 backdrop-blur-xl rounded-xl text-sm font-medium text-gray-700 hover:bg-white transition">
+              Cerrar
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -9,6 +9,7 @@ import TrendChart from '@/components/TrendChart'
 import BarRanking from '@/components/BarRanking'
 import { createClient } from '@/lib/supabase/client'
 import { getKPIs, getSeriesDiarias, getIdiomasDistribucion } from '@/lib/metricas'
+import { getMockKPIs, getMockSeries, getMockIdiomas } from '@/lib/mock-data'
 
 const MUNICIPIO_ID = process.env.NEXT_PUBLIC_MUNICIPIO_ID || '550e8400-e29b-41d4-a716-446655440000'
 
@@ -31,45 +32,40 @@ export default function DashboardPage() {
   const [series, setSeries] = useState<Array<Record<string, unknown>>>([])
   const [idiomas, setIdiomas] = useState<Array<{ idioma: string; valor: number }>>([])
   const [loading, setLoading] = useState(true)
-  const [seeding, setSeeding] = useState(false)
-
-  const supabase = createClient()
+  const [demoMode, setDemoMode] = useState(false)
 
   const loadData = async () => {
     setLoading(true)
     try {
+      const supabase = createClient()
       const [k, s, i] = await Promise.all([
         getKPIs(supabase, MUNICIPIO_ID),
         getSeriesDiarias(supabase, MUNICIPIO_ID, 30),
         getIdiomasDistribucion(supabase, MUNICIPIO_ID),
       ])
-      setKpis(k)
-      setSeries(s)
-      setIdiomas(i)
-    } catch (e) {
-      console.error('Error cargando datos:', e)
+      const totalVisitas = k.find(x => x.metrica === 'tour_views')?.valor || 0
+      if (totalVisitas > 0) {
+        setKpis(k)
+        setSeries(s)
+        setIdiomas(i)
+        setDemoMode(false)
+      } else {
+        loadMockData()
+      }
+    } catch {
+      loadMockData()
     }
     setLoading(false)
   }
 
-  useEffect(() => { loadData() }, [])
-
-  const handleSeed = async () => {
-    setSeeding(true)
-    try {
-      const res = await fetch('/api/seed', { method: 'POST' })
-      const data = await res.json()
-      if (data.ok) {
-        await loadData()
-      }
-    } catch (e) {
-      console.error('Error seeding:', e)
-    }
-    setSeeding(false)
+  const loadMockData = () => {
+    setKpis(getMockKPIs())
+    setSeries(getMockSeries(30))
+    setIdiomas(getMockIdiomas())
+    setDemoMode(true)
   }
 
-  const totalVisitas = kpis.find(k => k.metrica === 'tour_views')?.valor || 0
-  const hayDatos = totalVisitas > 0
+  useEffect(() => { loadData() }, [])
 
   return (
     <div className="space-y-8">
@@ -78,14 +74,10 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-500 mt-1">Resumen de los últimos 30 días</p>
         </div>
-        {!hayDatos && !loading && (
-          <button
-            onClick={handleSeed}
-            disabled={seeding}
-            className="px-5 py-2.5 bg-blue-500 text-white text-sm font-medium rounded-xl hover:bg-blue-600 transition disabled:opacity-50"
-          >
-            {seeding ? 'Generando datos...' : 'Generar datos demo (90 días)'}
-          </button>
+        {demoMode && (
+          <span className="px-4 py-2 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">
+            MODO DEMO — Datos simulados de Llanes
+          </span>
         )}
       </div>
 
