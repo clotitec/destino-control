@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/info/Desktop/clotitec-platform/apps/destino-control-temp/**)",
+      "Bash(cp -r app eslint.config.mjs next-env.d.ts next.config.ts package.json package-lock.json postcss.config.mjs public tsconfig.json .gitignore /c/Users/info/Desktop/clotitec-platform/apps/destino-control/)",
+      "Bash(cp -r node_modules /c/Users/info/Desktop/clotitec-platform/apps/destino-control/)",
+      "Bash(rm -rf /c/Users/info/Desktop/clotitec-platform/apps/destino-control-temp)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
