@@ -33,8 +33,8 @@ export default function TrendChart({ data, lines }: Props) {
                 borderRadius: '12px',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
               }}
-              labelFormatter={(v: string) => {
-                try { return format(parseISO(v), "d 'de' MMMM", { locale: es }) } catch { return v }
+              labelFormatter={(v) => {
+                try { return format(parseISO(String(v)), "d 'de' MMMM", { locale: es }) } catch { return String(v) }
               }}
             />
             {lines.map(l => (
