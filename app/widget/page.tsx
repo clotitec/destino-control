@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import { Code, Copy, Check } from 'lucide-react'
 import WidgetEmbed from '@/components/WidgetEmbed'

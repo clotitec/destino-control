@@ -1,20 +1,22 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Download, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import InformePreview from '@/components/InformePreview'
 
-const PDFDownloadLink = dynamic(
+const PDFDownloadLink = nextDynamic(
   () => import('@react-pdf/renderer').then(mod => mod.PDFDownloadLink),
   { ssr: false }
 )
 
-const InformePDF = dynamic(() => import('@/components/InformePDF'), { ssr: false })
+const InformePDF = nextDynamic(() => import('@/components/InformePDF'), { ssr: false })
 
 type Informe = {
   id: string

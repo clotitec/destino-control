@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import { FileText, Plus, Download, Eye, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'

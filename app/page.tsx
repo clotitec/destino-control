@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState } from 'react'
 import { Eye, Headphones, Smartphone, QrCode } from 'lucide-react'
 import KPICard from '@/components/KPICard'
